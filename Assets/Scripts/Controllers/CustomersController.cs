@@ -17,9 +17,11 @@ namespace CookingPrototype.Controllers {
 		public float               CustomerWaitTime      = 18f;
 		public float               CustomerSpawnTime     = 3f;
 		public List<CustomerPlace> CustomerPlaces        = null;
-
+		
 		[HideInInspector]
 		public int TotalCustomersGenerated { get; private set; } = 0;
+
+		public List<Customer> CustomersCount;
 
 		public event Action TotalCustomersGeneratedChanged;
 
@@ -43,16 +45,13 @@ namespace CookingPrototype.Controllers {
 				Debug.LogError("Another instance of CustomersController already exists!");
 			}
 			Instance = this;
+			Init();
 		}
 
 		void OnDestroy() {
 			if ( Instance == this ) {
 				Instance = null;
 			}
-		}
-
-		void Start() {
-			Init();
 		}
 
 		void Update() {
@@ -88,6 +87,7 @@ namespace CookingPrototype.Controllers {
 
 			var orders = _orderSets.Pop();
 			customer.Init(orders);
+			CustomersCount.Add(customer);
 
 			return customer;
 		}
@@ -128,6 +128,7 @@ namespace CookingPrototype.Controllers {
 				return;
 			}
 			place.Free();
+			CustomersCount.Remove(customer);
 			GameplayController.Instance.CheckGameFinish();
 		}
 
@@ -139,7 +140,31 @@ namespace CookingPrototype.Controllers {
 		/// <param name="order">Заказ, который пытаемся отдать</param>
 		/// <returns>Флаг - результат, удалось ли успешно отдать заказ</returns>
 		public bool ServeOrder(Order order) {
-			throw  new NotImplementedException("ServeOrder: this feature is not implemented.");
+			if( order == null ) {
+				return false;
+			}
+			Customer CustomerWithMinimalWaitTime = FindCustomerWithMinimalWaitTime(CustomersCount, order);
+			if ( !CustomerWithMinimalWaitTime.ServeOrder(order) ) {
+				return false;
+			}
+			if (CustomerWithMinimalWaitTime.IsComplete ) {
+				FreeCustomer(CustomerWithMinimalWaitTime);
+			}
+			return true;
+		}
+
+		Customer FindCustomerWithMinimalWaitTime(List<Customer> customers,Order order) {
+			float minimalWaitTime = CustomerWaitTime;
+			Customer curCustomer = GetComponent<Customer>();
+			foreach ( Customer customer in customers ) {
+				if ( customer.Orders.Contains(order)) {
+					if ( customer.WaitTime < minimalWaitTime ) {
+						minimalWaitTime = customer.WaitTime;
+						curCustomer = customer;
+					}
+				}	
+			}
+			return curCustomer;
 		}
 	}
 }

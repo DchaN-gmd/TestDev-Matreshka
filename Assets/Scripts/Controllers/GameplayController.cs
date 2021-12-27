@@ -12,6 +12,7 @@ namespace CookingPrototype.Controllers {
 		public static GameplayController Instance { get; private set; }
 
 		public GameObject TapBlock   = null;
+		public StartGameWindow StartWin = null;
 		public WinWindow  WinWindow  = null;
 		public LoseWindow LoseWindow = null;
 
@@ -43,16 +44,28 @@ namespace CookingPrototype.Controllers {
 			}
 		}
 
+		private void Start() {
+			Init();
+		}
+
 		void Init() {
-			TotalOrdersServed = 0;
-			Time.timeScale = 1f;
-			TotalOrdersServedChanged?.Invoke();
+			Time.timeScale = 0f;
+			TapBlock?.SetActive(true);
+			StartWin?.Show();
 		}
 
 		public void CheckGameFinish() {
 			if ( CustomersController.Instance.IsComplete ) {
 				EndGame(TotalOrdersServed >= OrdersTarget);
 			}
+		}
+
+		public void StartGame() {
+			StartWin?.Hide();
+			TapBlock.SetActive(false);
+			TotalOrdersServed = 0;
+			Time.timeScale = 1f;
+			TotalOrdersServedChanged?.Invoke();
 		}
 
 		void EndGame(bool win) {
